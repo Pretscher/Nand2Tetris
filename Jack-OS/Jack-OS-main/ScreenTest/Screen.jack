@@ -1,0 +1,169 @@
+// This file is part of www.nand2tetris.org
+// and the book "The Elements of Computing Systems"
+// by Nisan and Schocken, MIT Press.
+// File name: projects/12/Screen.jack
+
+/**
+ * A library of functions for displaying graphics on the screen.
+ * The Hack physical screen consists of 256 rows (indexed 0..255, top to bottom)
+ * of 512 pixels each (indexed 0..511, left to right). The top left pixel on 
+ * the screen is indexed (0,0).
+ */
+class Screen {
+    static boolean color;
+    static int memStart, memEnd;
+    /** Initializes the Screen. */
+    function void init() {
+        let color = true;
+        let memStart = 16384;
+        let memEnd = 24576;
+        return;
+    }
+
+    /** Erases the entire screen. */
+    function void clearScreen() {
+        var int i;
+        let i = memStart;
+        while (i < memEnd) {
+            do Memory.poke(i, 0);
+            let i = i + 1;
+        }
+        return;
+    }
+
+    /** Sets the current color, to be used for all subsequent drawXXX commands.
+     *  Black is represented by true, white by false. */
+    function void setColor(boolean b) {
+        let color = b;
+        return;
+    }
+
+    /** Draws the (x,y) pixel, using the current color. */
+    function void drawPixel(int x, int y) {
+        var int address, value, temp;
+        var Array power2;
+        let address = memStart + (32 * y) + (x / 16);
+        let value = Memory.peek(address);
+
+        let power2 = Math.getPower2();
+        if (color) {
+            let value = value | power2[x & 15];
+        } else {
+            let value = value & ~(power2[x & 15]);
+        }
+        do Memory.poke(address, value);
+        return;
+    }
+
+    /** Draws a line from pixel (x1,y1) to pixel (x2,y2), using the current color. */
+    function void drawLine(int x1, int y1, int x2, int y2) {
+        var int posX, posY, dX, dY, a, b, diff;
+
+        if(x2 < x1) {//swap the x values if x1 is greater than x2, because it doesnt make a difference and we can always go right if we want to change x this way
+            let diff = x2;//abuse diff as temporary variable for efficiency
+            let x2 = x1;
+            let x1 = diff;
+
+            let diff = y2;
+            let y2 = y1;
+            let y1 = diff;
+        }
+
+        //horizontal lines------------------------------------------------------------------------------------------------------------------------------------------
+
+        //horizontal lines can be made more efficient through poking 16 bits where possible, instead of using drawPixel.
+        if(y1 = y2) {
+            if((x2 - x1) > 16) {//we dont want to predraw anything if the line isnt long enough. then we just draw everything in the third while, cant be optimised
+                while(~(Math.modulo(x1, 16) = 0)) {//draw precisely until we reach the start of a 16 bit chunk
+                    do Screen.drawPixel(x1, y1);
+                    let x1 = x1 + 1;
+                }
+            }
+            while(x1 < x2 - 16) {//draw until the last chunk could be reached
+                do Memory.poke(memStart + (y1 * 32) + (x1 / 16), color);
+                let x1 = x1 + 16;
+            }
+            while(~(x1 > x2)) {//draw precisely until the end
+                do Screen.drawPixel(x1, y1);
+                let x1 = x1 + 1;
+            }
+            
+            return;
+        }
+
+
+        //vertical lines---------------------------------------------------------------------------------------------------------------------------------------------
+
+        if(x1 = x2) {
+            if(~(y1 > y2)) {//do this decision once outside the loop to gain performance
+                let posY = y1;
+                let dY = y2;//dY is abused as the goal y coordinate for efficiency
+            } else {
+                let posY = y2;
+                let dY = y1;
+            }
+            while(posY < dY) {
+                do Screen.drawPixel(x1, posY);
+                let posY = posY + 1;
+            }
+            return;
+        }
+
+
+
+        //diagonal lines--------------------------------------------------------------------------------------------------------------------------------------------
+
+        let dX = x2 - x1;//always positive
+        let dY = y2 - y1;
+
+        let diff = 0;
+        let a = 0;
+        let b = 0;
+        if(y1 < y2) {//from bottom to top
+            while((~(a > dX)) & ~((b > dY))) {
+                do Screen.drawPixel(x1 + a, y1 + b);
+                if(diff < 0) {//decide wether to go right or up
+                    let a = a + 1;
+                    let diff = diff + dY;
+                } else {
+                    let b = b + 1;
+                    let diff = diff - dX;
+                }
+            }
+        } else {//from top to bottom
+            while((~(a > dX)) & ~((b < dY))) {
+                do Screen.drawPixel(x1 + a, y1 + b);
+                if(diff < 0) {//decide wether to go right or down
+                    let b = b - 1;
+                    let diff = diff + dX;
+                } else {
+                    let a = a + 1;
+                    let diff = diff + dY;
+                }
+            }
+        }
+        return;
+    }
+
+    /** Draws a filled rectangle whose top left corner is (x1, y1)
+     * and bottom right corner is (x2,y2), using the current color. */
+    function void drawRectangle(int x1, int y1, int x2, int y2) {
+        while (~(y1 > y2)) {
+            do Screen.drawLine(x1, y1, x2, y1);
+            let y1 = y1 + 1;
+        }
+        return;
+    }
+
+    /** Draws a filled circle of radius r<=181 around (x,y), using the current color. */
+    function void drawCircle(int x, int y, int r) {
+        var int cX, cY;
+        let cY = -r;
+        while (~(cY > r)) {//start at the top
+            let cX = Math.sqrt((r * r) - (cY * cY));//determine the start of each line
+            do Screen.drawLine(x - cX, y + cY, x + cX, y + cY);//draw the line simmetrically around the center
+            let cY = cY + 1;//proceed to the bottom
+        }
+        return;
+    }
+}

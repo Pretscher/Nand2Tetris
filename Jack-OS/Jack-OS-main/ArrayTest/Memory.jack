@@ -1,0 +1,92 @@
+// This file is part of www.nand2tetris.org
+// and the book "The Elements of Computing Systems"
+// by Nisan and Schocken, MIT Press.
+// File name: projects/12/Memory.jack
+
+/**
+ * This library provides two services: direct access to the computer's main
+ * memory (RAM), and allocation and recycling of memory blocks. The Hack RAM
+ * consists of 32,768 words, each holding a 16-bit binary number.
+ */ 
+ class Memory {
+	static Array ram;
+	static int heapBase;
+	static Array heap;
+	
+    /** Initializes the class. */
+    function void init() {
+		let ram = 0;
+		let heapBase = 2048;
+		let heap = heapBase;
+		let heap[0] = -1;//start of the next block in the list, if -1 no next block exists
+		let heap[1] = 14335;//end of this block in the list
+		let heap[2] = 0;//signal that this block is available (0 means open, 1 means used)
+		return;
+	}
+
+    /** Returns the RAM value at the given address. */
+    function int peek(int address) {
+		return ram[address];
+	}
+
+    /** Sets the RAM value at the given address to the given value. */
+    function void poke(int address, int value) {
+		let ram[address] = value;
+		return;
+	}
+
+    /** Finds an available RAM block of the given size and returns
+     *  a reference to its base address. */
+    function int alloc(int size) {
+		var Array block;
+		
+		let heap = heapBase;//go to heap start
+		//Go through the heap blocks until a fitting one that is big enough (first fit!)
+		while (~(heap[1] > (size + 2)) | ~(heap[2] = 0)) {//as long as not big enough or not empty, go further
+            let heap = heap[0];
+		}
+		if(heap[1] = (size + 3)) {//check for a perfect fit. In this case we dont need to create another block.
+            let heap[2] = 1;//mark current block as used
+            return heap + 3;
+        } else {//split the block that heap points to in two
+            let block = heap + size + 3;//the next block starts where this one ends, plus the size of the allocated segment, plus the 3 vars of this linked list
+            let block[0] = heap[0];//we put the block between the current block and the next block, so it should point to the next block (or to nothing, which would be -1)
+            let block[1] = heap[1] - size - 3;//new block has size of this segment - the 3 vars of the linked list and the size of the block we allocated
+            let block[2] = 0;//mark new block as not used
+            let heap[0] = block;
+            let heap[1] = size + 3;//size of this segment has shrunk to size of the ram block we allocated plus its variables
+            let heap[2] = 1;//mark current block as used
+        }
+		return heap + 3;
+	}
+
+    /** De-allocates the given object (cast as an array) by making
+     *  it available for future allocations. */
+    function void deAlloc(Array o) {
+		var Array nextBlock;
+        var Array previous;
+        let heap = o - 3;
+        let heap[2] = 0;//mark block as not used, can be overwritten in the allocate algorithm now. 
+
+        //now, if the next block is also empty (and exists), combine the blocks
+        if(~(heap[0] = -1)) {
+            let nextBlock = heap[0];
+            if(nextBlock[2] = 0) {
+                let heap[1] = heap[1] + nextBlock[1];
+                let heap[0] = nextBlock[0];
+            }
+        }
+		//find the previous block and try concatinating here as well
+        let previous = heapBase;//go to heap start
+        if(~(previous = heap)) {//if there is no previous segment, do nothing
+            while (~(previous[0] = heap)) {//as long as not big enough or not empty, go further
+                let previous = previous[0];
+            }
+            if(previous[2] = 0) {
+                let previous[1] = previous[1] + heap[1];
+                let previous[0] = heap[0];
+            }
+        }
+		return;
+	}    
+}

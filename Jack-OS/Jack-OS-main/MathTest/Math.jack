@@ -1,0 +1,190 @@
+class Math {
+    static Array power2;
+    function void init() {
+        var int last, counter;
+        let power2 = Array.new(16);
+        let last = 1;
+        while(counter < 16) {
+            let power2[counter] = last;
+            let last = last + last;
+            let counter = counter + 1;
+        }
+        return;
+    }
+
+
+    function int modulo(int a, int b) {
+        var int c;
+        if(a < b) {
+            return a;
+        }
+        while(true) {
+            if(((c + b) > a) | ((c + b) < 0)) {//Handle overflow 
+                return a - c;
+            } else {
+                let c = c + b;
+            }
+        }
+        return -1;
+    }
+
+    function boolean bit(int num, int index) {
+        return ~((num & power2[index]) = 0);
+    }
+
+    function Array toBinary(int number) {
+        var Array binary;
+        var int i, mask;
+        let binary = Array.new(16);
+
+        let mask = 0;
+        let i = 0;
+        while (i < 16) {
+            let mask = mask + power2[i];
+            if ((number & mask) = mask) {
+                let binary[i] = 1;
+            } else {
+                let binary[i] = 0;
+                let mask = mask - power2[i];
+            }
+            let i = i + 1;
+        }
+        return binary;
+    }
+
+    function int fromBinary(Array binary) {
+        var int i, factor, value;
+        let factor = 1;
+        let i = 0;
+        while(i < 16) {
+            let value = value + (factor * binary[i]); 
+            let i = i + 1;
+            let factor = factor + factor;
+        }
+        return value;
+    }
+
+    function int multiply(int x, int y) {
+        var int out, shiftedX, bit, iteration;
+        var boolean negative;
+
+        //if x < 0 && y >= 0 or the other way around, negate the output. the recursive calls will only yield positive outputs,
+        //because we take the absolute value for calculations
+        let negative = false;
+        if(((x < 0) & ((y > 0) | (y = 0))) | (((x > 0) | (x = 0)) & (y < 0))) {
+            let negative = true;
+        }
+
+        let x = Math.abs(x);
+        let y = Math.abs(y);
+
+        let out = 0;
+        let iteration = 0;
+        let shiftedX = x;
+        while ((iteration < 16) & ~(power2[iteration] > y)) {
+            if(Math.bit(y, iteration) = true) {
+                let out = out + shiftedX;
+            }
+            let shiftedX = shiftedX + shiftedX;
+            let iteration = iteration + 1;
+        }
+
+        if(negative) {
+            return -out;
+        }
+        return out;
+    }
+
+    function int divide(int x, int y) {
+        var boolean negative;
+
+        //if x < 0 && y >= 0 or the other way around, negate the output. the recursive calls will only yield positive outputs,
+        //because we take the absolute value for calculations
+        let negative = false;
+        if(((x < 0) & ((y > 0) | (y = 0))) | (((x > 0) | (x = 0)) & (y < 0))) {
+            let negative = true;
+        }
+        let x = Math.abs(x);
+        let y = Math.abs(y);
+        if(x < y) {
+            return 0;
+        }
+        if(x = y) {
+            return 1;
+        }
+        
+        if(negative) {
+            return -Math.divHelp(x, y);
+        }
+        return Math.divHelp(x, y);
+    }
+
+    //needs to be a seperate function, because else we cant tell if the user put in negative numbers or if they come from an overflow
+    function int divHelp(int x, int y) {
+        var int q;
+        if((y > x) | (y < 0)) {//to prevent overflow
+            return 0;
+        }
+
+        let q = Math.divHelp(x, y + y);
+        if((x - ((q + q) * y)) < y) {
+            return q + q;
+        }
+        return q + q + 1;
+    }
+
+    function int abs(int x) {
+        if(x < 0) {
+            return -x;
+        }
+        return x;
+    }
+
+    function int getHighestBitIndex(int x) {
+        var int i;
+
+        let i = 0;
+        while(i < 16) {
+            if((x < power2[i])) {
+                return i;
+            }
+            let i = i + 1;
+        }
+        return 15;
+    }
+
+    function int sqrt(int x) {
+        var int y, i, num, n;
+
+        let n = Math.getHighestBitIndex(x);
+        let i = (n / 2);
+        while(i > -1) {
+            let num = (y + power2[i]) * (y + power2[i]);
+            if((num > 0) & ((num < x) | (num = x))) {
+                let y = y + power2[i];
+            }
+            let i = i - 1;
+        }
+        return y;
+    }
+
+    function int max(int a, int b) {
+        if(a > b) {
+            return a;
+        } else {
+            return b;
+        }
+    }
+
+    function int min(int a, int b) {
+        if(a < b) {
+            return a;
+        } else {
+            return b;
+        }
+    }
+
+    function Array getPower2() {
+        return power2;
+    }
+}

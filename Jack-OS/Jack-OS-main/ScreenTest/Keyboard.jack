@@ -1,0 +1,108 @@
+class Keyboard {
+
+    function void init() {//does nothing in my implementation
+        return;
+    } 
+
+    /* Returns the character code of the currently pressed key,
+    or 0 if no key is currently pressed.*/
+    function char keyPressed() {
+        return Memory.peek(24576);
+    }
+    /* Reads the next character from the keyboard:
+    waits until a key is pressed and then released, then echoes
+    the key to the screen, and returns the code of the pressed key. Also displays the cursor */
+    function char readChar() {
+        var char key;
+        //do Output.printChar(1);//display cursor
+        //wait for press
+		while (key = 0) {
+			let key = Keyboard.keyPressed();
+		}
+        //wait for release
+		while (~(Keyboard.keyPressed() = 0)) {
+
+        }
+      //  do Output.backSpace();//delete cursor
+        if(key < 127) {//dont print backspaces and stuff
+            do Output.printChar(key);
+        }
+        return key;
+    }
+    /* Prints the message on the screen, reads the next line (until a newLine
+    character) from the keyboard, and returns its value. */
+    function String readLine(String message) {
+        var String str;
+        var char c;
+
+        do Output.printString(message);
+
+        let str = String.new(64);
+        while(true) {
+            let c = Keyboard.readChar();
+            if(c = 128) {
+                do Output.println();
+                return str;
+            }
+            else {
+                if(c = 129) { //handle backspace
+                    do str.eraseLastChar();
+                    do Output.backSpace();
+                    do Output.printChar(32);
+				    do Output.backSpace();
+                }
+                else {
+                    if(str.length() < 64) {//else do nothing except on backspaces or new lines
+                        do str.appendChar(c);
+                    }
+                }
+            }
+        }
+        return str;
+    }
+    /* Prints the message on the screen, reads the next line
+    (until a newline character) from the keyboard, and returns its
+    integer value (until the first non numeric character). */
+    function int readInt(String message) {
+        var int out;
+        var char c;
+        var boolean negative, nonDigitFound;
+
+        do Output.printString(message);
+        let nonDigitFound = false; 
+        let c = Keyboard.readChar();
+        if(c = 45) {
+            let negative = true;
+            let c = Keyboard.readChar();//then get the next char already, we dont want the - to instantly end the int
+        }
+        while(true) {
+            if(c = 128) {
+                do Output.println();
+                if(negative) {
+                    return -out;
+                }
+                return out;
+            }
+            else {
+                if(c = 129) { //handle backspace backspace
+                    let out = out / 10;//erase last digit
+                    do Output.backSpace();
+                    do Output.printChar(32);
+				    do Output.backSpace();
+                }
+                else {
+                    if(((c < 47) | (c > 58))) {
+                        let nonDigitFound = true;//once this happends, dont add anything to the string anymore
+                    }
+                    if(~nonDigitFound) {
+                        let out = out * 10;
+                        let out = out + (c - 48);//actual number is c - 48 because of the location in the char table
+                    }
+                }
+            }
+            let c = Keyboard.readChar();
+        }
+        return -1;//never reached
+    }
+
+}
